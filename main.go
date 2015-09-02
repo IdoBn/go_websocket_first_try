@@ -11,22 +11,36 @@ import (
 var hubs []Hub
 var identifier = 0
 
+// Hub todo
 type Hub struct {
 	id   int
 	send chan interface{}
 	conn *websocket.Conn
 }
 
+// Message todo
 type Message struct {
-	HubId int
+	HubID int
 	Msg   interface{}
 }
 
+// Listen todo
 func (h *Hub) Listen(messages chan interface{}) {
 	for json := range messages {
 		err := h.conn.WriteJSON(json)
 		if err != nil {
 			log.Println("something went wrong while sending message to hub")
+		}
+	}
+}
+
+// Read todo
+func (h *Hub) Read() {
+	var json interface{}
+	for {
+		err := h.conn.ReadJSON(&json)
+		if err != nil {
+			return
 		}
 	}
 }
@@ -48,8 +62,9 @@ func getWsHandler(upgrader *websocket.Upgrader, addHub chan Hub, removeHub chan 
 		identifier = identifier + 1
 
 		addHub <- h
-		h.Listen(h.send)
+		go h.Listen(h.send)
 		defer func() { removeHub <- h }()
+		h.Read()
 	}
 }
 
@@ -62,15 +77,17 @@ func hubWorker() (chan Hub, chan Hub, chan Message) {
 			select {
 			case h := <-addHub:
 				hubs = append(hubs, h)
+				log.Println("Adding hub:", h)
 			case h := <-removeHub:
 				for i, hub := range hubs {
 					if hub.id == h.id {
 						hubs = append(hubs[:i], hubs[i+1:]...)
+						log.Println("Removing hub:", h)
 						return
 					}
 				}
 			case m := <-findHub:
-				hubs[m.HubId].send <- m.Msg
+				hubs[m.HubID].send <- m.Msg
 			}
 		}
 	}()
