@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+    <script type="text/javascript">
+      var conn = new WebSocket("ws://localhost:8089/ws")
+
+      conn.onclose = function(e) {
+        console.log("on close", e);
+      };
+
+      conn.onopen = function(e) {
+        console.log("on open", e);
+      };
+
+      conn.onmessage = function(e){
+        console.log("on message", e);
+        console.log(e.data);
+      };
+    </script>
+  </body>
+</html>
